@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+*.log
+mysql_data/
+__pycache__/
+*.pyc
+.venv/
+.claude/
+*.tsbuildinfo
+backend/data/pdf-root-images/

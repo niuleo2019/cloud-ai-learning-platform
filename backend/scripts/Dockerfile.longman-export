@@ -1,0 +1,14 @@
+FROM python:3.12-slim
+
+WORKDIR /work
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential liblzo2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY scripts/requirements-longman-export.txt /tmp/requirements-longman-export.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-longman-export.txt
+
+COPY scripts/export_longman_mdx.py /work/export_longman_mdx.py
+
+ENTRYPOINT ["python", "/work/export_longman_mdx.py"]

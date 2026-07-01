@@ -1,0 +1,14 @@
+{
+  "evidence": {
+    "text": "evidence noun. Facts or signs that show clearly that something exists or is true. Example: There is no evidence that the treatment works.",
+    "html": "<b>evidence</b> <i>noun</i>. Facts or signs that show clearly that something exists or is true. <b>Example:</b> There is no evidence that the treatment works."
+  },
+  "research": {
+    "text": "research noun. Serious study of a subject in order to discover new facts or test new ideas. Example: Recent research shows that sleep affects memory.",
+    "html": "<b>research</b> <i>noun</i>. Serious study of a subject in order to discover new facts or test new ideas. <b>Example:</b> Recent research shows that sleep affects memory."
+  },
+  "arbitrary": {
+    "text": "arbitrary adjective. Decided or arranged without any reason or plan, often unfairly. Example: The rules seemed completely arbitrary. Example: Students should not be judged by arbitrary standards.",
+    "html": "<b>arbitrary</b> <i>adjective</i>. Decided or arranged without any reason or plan, often unfairly. <b>Example:</b> The rules seemed completely arbitrary. <b>Example:</b> Students should not be judged by arbitrary standards."
+  }
+}
