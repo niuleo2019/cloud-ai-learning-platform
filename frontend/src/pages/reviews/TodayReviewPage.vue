@@ -147,6 +147,7 @@ onMounted(loadReviews);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
   padding: 28px 24px;
   display: flex;
   flex-direction: column;
@@ -156,10 +157,14 @@ onMounted(loadReviews);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 .flip-card-front {
-  background: #fff;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(96, 165, 250, 0.14), transparent 36%),
+    #ffffff;
 }
 .flip-card-back {
-  background: #f8fffe;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(34, 197, 94, 0.12), transparent 38%),
+    #f8fffe;
   transform: rotateY(180deg);
   align-items: flex-start;
   justify-content: flex-start;
@@ -216,6 +221,70 @@ onMounted(loadReviews);
   font-size: 13px;
   color: var(--van-gray-5);
   padding: 8px 0 24px;
+}
+
+:global(.theme-dark) .review-progress-label {
+  color: #cbd5e1;
+}
+
+:global(.theme-dark) .review-progress :deep(.van-progress) {
+  background: rgba(30, 41, 59, 0.82) !important;
+}
+
+:global(.theme-dark) .review-summary {
+  border-color: rgba(96, 165, 250, 0.22);
+  background:
+    radial-gradient(circle at 88% 8%, rgba(37, 99, 235, 0.3), transparent 34%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.82));
+}
+
+:global(.theme-dark) .review-summary .eyebrow {
+  color: #93c5fd;
+}
+
+:global(.theme-dark) .flip-card-face {
+  border-color: rgba(147, 197, 253, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 42px rgba(0, 0, 0, 0.34);
+}
+
+:global(.theme-dark) .flip-card-front {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(96, 165, 250, 0.24), transparent 38%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.88));
+}
+
+:global(.theme-dark) .flip-card-back {
+  background:
+    radial-gradient(circle at 86% 12%, rgba(34, 197, 94, 0.18), transparent 34%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.9));
+}
+
+:global(.theme-dark) .card-word {
+  color: #f8fafc;
+  text-shadow: 0 12px 34px rgba(96, 165, 250, 0.24);
+}
+
+:global(.theme-dark) .flip-hint,
+:global(.theme-dark) .flip-prompt,
+:global(.theme-dark) .card-example,
+:global(.theme-dark) .card-source {
+  color: #cbd5e1;
+}
+
+:global(.theme-dark) .card-meaning {
+  color: #e5edf7;
+}
+
+:global(.theme-dark) .card-example {
+  border-left-color: #60a5fa;
+}
+
+:global(.theme-dark) .stage-tag {
+  color: #bfdbfe;
+  border-color: rgba(96, 165, 250, 0.7);
+  background: rgba(37, 99, 235, 0.14);
 }
 
 .fade-up-enter-active {

@@ -15,7 +15,7 @@ from app.interfaces.http.response import (
     success_response,
     validation_exception_handler,
 )
-from app.interfaces.http.routes import auth_routes, dictionary_routes, pdf_roots_routes, review_routes, word_routes
+from app.interfaces.http.routes import auth_routes, dictionary_routes, pdf_roots_routes, review_routes, vision_routes, word_routes
 
 
 @asynccontextmanager
@@ -60,6 +60,7 @@ app.include_router(dictionary_routes.router, prefix="/api/dictionary", tags=["di
 app.include_router(word_routes.router, prefix="/api/words", tags=["words"])
 app.include_router(review_routes.router, prefix="/api/reviews", tags=["reviews"])
 app.include_router(pdf_roots_routes.router, prefix="/api/pdf-roots", tags=["pdf-roots"])
+app.include_router(vision_routes.router, prefix="/api/vision", tags=["vision"])
 
 PDF_ROOT_IMAGES_DIR = Path(__file__).resolve().parents[1] / "data" / "pdf-root-images"
 PDF_ROOT_IMAGES_DIR.mkdir(parents=True, exist_ok=True)

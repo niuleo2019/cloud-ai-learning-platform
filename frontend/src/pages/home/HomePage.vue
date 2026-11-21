@@ -38,6 +38,13 @@
             </span>
           </template>
           <template #button>
+            <van-button
+              size="small"
+              class="vision-inline-button"
+              icon="photograph"
+              :aria-label="t('vision.entry')"
+              @click.stop="router.push('/vision')"
+            />
             <van-button size="small" type="primary" icon="arrow" :disabled="!keyword.trim()" @click="handleSearch">
               {{ t('home.search') }}
             </van-button>
@@ -150,3 +157,5 @@ onBeforeUnmount(() => {
   }
 });
 </script>
+
+<style scoped></style>

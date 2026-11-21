@@ -22,6 +22,7 @@ const router = createRouter({
         { path: 'home', component: () => import('@/pages/home/HomePage.vue') },
         { path: 'overview', component: () => import('@/pages/home/LearningOverviewPage.vue') },
         { path: 'lookup', component: () => import('@/pages/words/WordLookupPage.vue') },
+        { path: 'vision', component: () => import('@/pages/vision/VisionExtractPage.vue') },
         { path: 'add-word', component: () => import('@/pages/words/AddWordPage.vue') },
         { path: 'words', component: () => import('@/pages/words/WordListPage.vue') },
         { path: 'reviews', component: () => import('@/pages/reviews/TodayReviewPage.vue') },

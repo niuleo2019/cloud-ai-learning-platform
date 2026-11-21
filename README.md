@@ -58,6 +58,92 @@ src/
 
 你应该学习：`pages` 只负责页面组合，`features` 放具体业务能力，`shared` 放可复用工具。这样以后加“错词本”“复习历史”时，不会把所有代码都塞进 `views`。
 
+## OpenCV / OCR 图片提词功能
+
+本项目新增了一个面向 Cloud + Edge 场景的图片提词 Demo，用来展示“边缘采集 -> 后端处理 -> 前端展示”的数据流。
+
+### 功能入口
+
+登录后进入首页，点击：
+
+```text
+Extract words from image / 图片提取单词
+```
+
+页面路径：
+
+```text
+/vision
+```
+
+用户可以上传截图、书页、路牌或英文材料图片，后端会：
+
+1. 使用 OpenCV 解码图片
+2. 转灰度图
+3. 放大低分辨率图片
+4. 降噪
+5. 自适应阈值处理
+6. 使用 Tesseract OCR 识别英文文本
+7. 从 OCR 文本中提取英文单词候选
+
+### 后端接口
+
+```http
+POST /api/vision/extract-words
+Content-Type: multipart/form-data
+Authorization: Bearer <token>
+
+image=<file>
+```
+
+返回示例：
+
+```json
+{
+  "success": true,
+  "data": {
+    "text": "Evidence suggests that...",
+    "words": [
+      { "word": "evidence", "count": 1 },
+      { "word": "suggests", "count": 1 }
+    ],
+    "preprocessing": ["decode", "grayscale", "upscale", "denoise", "adaptive-threshold"],
+    "engine": "opencv + tesseract"
+  },
+  "message": "Words extracted from image"
+}
+```
+
+### 本地运行要求
+
+Python 依赖：
+
+```bash
+pip install -r backend/requirements.txt
+```
+
+如果直接在本机运行后端，还需要安装 Tesseract OCR 引擎。
+
+Docker 后端镜像已经在 `backend/Dockerfile` 中安装：
+
+```text
+tesseract-ocr
+```
+
+所以推荐通过 Docker 运行：
+
+```bash
+docker compose up --build
+```
+
+### 简历表达
+
+这个功能可以在简历里描述为：
+
+```text
+Implemented an image-based vocabulary ingestion workflow using Python, OpenCV preprocessing, Tesseract OCR and FastAPI, simulating an edge-to-cloud data capture pipeline.
+```
+
 ## 3. 前端初始化命令
 
 如果从零手动创建：
