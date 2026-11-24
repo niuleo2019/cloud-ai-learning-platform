@@ -9,3 +9,10 @@ __pycache__/
 .claude/
 *.tsbuildinfo
 backend/data/pdf-root-images/
+.env.android
+# Large local data: dictionary audio, Whisper models, user-uploaded listening audio
+backend/data/*.mdd
+backend/data/whisper-models/
+backend/data/listening-audio/
+backend/data/dictionaries/
+backend/data/tts-voices/

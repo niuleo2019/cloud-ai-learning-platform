@@ -4,9 +4,10 @@ import router from '@/app/router';
 import { clearAuth, getToken } from '@/features/auth/model/authStore';
 import { useSettingsStore } from '@/shared/model/settingsStore';
 import type { ApiResponse } from '@/shared/types';
+import { API_BASE_URL } from '@/shared/api/config';
 
 const http = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   timeout: 10000
 });
 

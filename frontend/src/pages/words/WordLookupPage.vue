@@ -1,9 +1,20 @@
 <template>
   <main class="page mobile-page lookup-detail-page">
-    <van-nav-bar :title="t('lookup.title')" :left-text="t('common.back')" left-arrow @click-left="router.back()" />
+    <van-nav-bar :title="t('lookup.title')" :left-text="t('common.back')" left-arrow @click-left="goBack" />
 
     <section class="lookup-search-card autocomplete-host">
-      <van-field v-model="keyword" clearable :placeholder="t('lookup.input')" @keyup.enter="loadWord()">
+      <van-field v-model="keyword" :placeholder="t('lookup.input')" @keyup.enter="loadWord()">
+        <template #right-icon>
+          <button
+            v-if="keyword"
+            type="button"
+            class="lookup-clear-button"
+            :aria-label="t('lookup.clearSearch')"
+            @click="clearLookup"
+          >
+            <van-icon name="clear" aria-hidden="true" />
+          </button>
+        </template>
         <template #button>
           <van-button size="small" type="primary" :loading="loading" :disabled="!keyword.trim()" @click="loadWord()">
             {{ t('home.search') }}
@@ -61,6 +72,12 @@
         </div>
       </section>
 
+      <!-- Imported MDX dictionaries: one panel per enabled dictionary -->
+      <DictionaryPanels :word="result.word" @lookup="openDictionaryWord" />
+
+      <!-- AI deep explanation: etymology, letter shapes, memory "movie" -->
+      <WordExplanationCard :word="result.word" />
+
       <section class="learning-card word-learning-card longman-panel">
         <div class="section-heading">
           <h2>{{ t('lookup.meaning') }}</h2>
@@ -73,7 +90,26 @@
           </article>
         </div>
 
-        <div v-if="longmanExamples.length > 0" class="longman-example-block">
+        <!-- Real recordings from an imported dictionary (LDOCE) take priority over the text-only examples -->
+        <div v-if="recordedExamples.length > 0" class="longman-example-block">
+          <div class="section-heading compact-heading">
+            <h2>{{ t('lookup.longmanExamples') }}</h2>
+            <span>{{ t('lookup.realVoice') }}</span>
+          </div>
+          <div class="scene-list">
+            <article v-for="(item, index) in recordedExamples" :key="item.text" class="scene-item longman-example">
+              <div class="scene-title-row">
+                <strong>{{ recordedSource }} {{ index + 1 }}</strong>
+                <van-button size="mini" round type="primary" plain icon="volume-o" @click="playRecordedExample(item)">
+                  {{ t('add.listenSentence') }}
+                </van-button>
+              </div>
+              <blockquote>{{ item.text }}</blockquote>
+            </article>
+          </div>
+        </div>
+
+        <div v-else-if="longmanExamples.length > 0" class="longman-example-block">
           <div class="section-heading compact-heading">
             <h2>{{ t('lookup.longmanExamples') }}</h2>
             <span>Examples</span>
@@ -137,7 +173,7 @@
               {{ language === 'zh' ? `（第 ${page.page_num + 1} 页）` : `(${t('lookup.page')} ${page.page_num + 1})` }}
             </p>
             <p v-if="page.note" class="pdf-note">{{ page.note }}</p>
-            <img :src="page.image_url" :alt="page.title" class="pdf-page-image" loading="lazy" />
+            <img :src="resolveApiAssetUrl(page.image_url)" :alt="page.title" class="pdf-page-image" loading="lazy" />
           </article>
         </template>
         <p v-else class="pdf-empty-hint">{{ t('lookup.noBookResult') }}</p>
@@ -184,10 +220,18 @@
 </template>
 
 <script setup lang="ts">
+import { hapticTap } from '@/shared/lib/haptics';
+import DictionaryPanels from '@/features/dictionaries/ui/DictionaryPanels.vue';
+import { openInAppBrowser } from '@/shared/lib/inAppBrowser';
+import { getRecordedExamplesApi, type RecordedExample } from '@/features/dictionaries/api/dictionaryLibraryApi';
+import { API_BASE_URL } from '@/shared/api/config';
+import WordExplanationCard from '@/features/words/ui/WordExplanationCard.vue';
+import { preloadLongmanAudio } from '@/features/words/model/pronunciation';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { showFailToast, showSuccessToast, showToast } from 'vant';
 import { addWordApi, deleteWordApi, getWordsApi } from '@/features/words/api/wordApi';
+import { resolveApiAssetUrl } from '@/shared/api/config';
 import {
   buildMediaScenes,
   buildRootMemory,
@@ -196,6 +240,7 @@ import {
   type DictionaryLookupResult
 } from '@/features/words/model/wordLearning';
 import { getWordSuggestions } from '@/features/words/model/wordSuggestions';
+import { recordSearch } from '@/features/words/model/searchHistory';
 import { searchPdfRoots, type PdfRootPage } from '@/features/words/api/pdfRootsApi';
 import { useSettingsStore } from '@/shared/model/settingsStore';
 import type { Word } from '@/shared/types';
@@ -210,6 +255,7 @@ const result = ref<DictionaryLookupResult | null>(null);
 const favoriteWord = ref<Word | null>(null);
 const pdfPages = ref<PdfRootPage[]>([]);
 const pdfLoading = ref(false);
+let lookupRequest = 0;
 
 const suggestions = computed(() => getWordSuggestions(keyword.value));
 const rootMemories = computed(() => buildRootMemory(result.value?.word || keyword.value, language.value));
@@ -232,13 +278,37 @@ function syncKeywordFromRoute() {
   keyword.value = typeof word === 'string' ? word : '';
 }
 
-async function refreshFavoriteStatus(word: string) {
+function goBack() {
+  if (router.options.history.state.back) {
+    router.back();
+    return;
+  }
+
+  const { mode } = route.query;
+  void router.replace({ path: '/home', query: { mode } });
+}
+
+function resetLookupResult() {
+  lookupRequest += 1;
+  loading.value = false;
+  result.value = null;
+  favoriteWord.value = null;
+  pdfPages.value = [];
+  pdfLoading.value = false;
+}
+
+function clearLookup() {
+  keyword.value = '';
+  resetLookupResult();
+  void router.replace({ query: { ...route.query, word: undefined } });
+}
+
+async function findFavorite(word: string) {
   try {
     const words = await getWordsApi();
-    favoriteWord.value =
-      words.find((item) => item.word.trim().toLowerCase() === word.trim().toLowerCase()) || null;
+    return words.find((item) => item.word.trim().toLowerCase() === word.trim().toLowerCase()) || null;
   } catch {
-    favoriteWord.value = null;
+    return null;
   }
 }
 
@@ -249,36 +319,46 @@ async function loadWord(updateRoute = true) {
     return;
   }
 
+  const request = ++lookupRequest;
   loading.value = true;
   favoriteWord.value = null;
   pdfPages.value = [];
+  pdfLoading.value = false;
   try {
-    result.value = await lookupDictionary(word);
-    keyword.value = result.value.word;
-    await refreshFavoriteStatus(result.value.word);
+    const match = await lookupDictionary(word);
+    if (request !== lookupRequest) return;
+
+    const favorite = await findFavorite(match.word);
+    if (request !== lookupRequest) return;
+
+    result.value = match;
+    keyword.value = match.word;
+    favoriteWord.value = favorite;
+    recordSearch(match.word, match.meaning);
 
     if (updateRoute) {
-      router.replace({ path: '/lookup', query: { word: result.value.word } });
+      void router.replace({ query: { ...route.query, word: match.word } });
     }
 
-    loadPdfRoots(result.value.word);
+    void loadPdfRoots(match.word, request);
   } catch (error) {
+    if (request !== lookupRequest) return;
     result.value = null;
     showFailToast(error instanceof Error ? error.message : t('lookup.failed'));
   } finally {
-    loading.value = false;
+    if (request === lookupRequest) loading.value = false;
   }
 }
 
-async function loadPdfRoots(word: string) {
+async function loadPdfRoots(word: string, request: number) {
   pdfLoading.value = true;
   try {
     const data = await searchPdfRoots(word);
-    pdfPages.value = data.pages ?? [];
+    if (request === lookupRequest) pdfPages.value = data.pages ?? [];
   } catch {
-    pdfPages.value = [];
+    if (request === lookupRequest) pdfPages.value = [];
   } finally {
-    pdfLoading.value = false;
+    if (request === lookupRequest) pdfLoading.value = false;
   }
 }
 
@@ -288,6 +368,7 @@ async function selectSuggestion(word: string) {
 }
 
 async function toggleFavorite() {
+  hapticTap();
   if (!result.value || favoriteLoading.value) return;
 
   favoriteLoading.value = true;
@@ -328,14 +409,15 @@ function openLongman() {
     return;
   }
 
-  window.open(longmanUrl, '_blank', 'noopener,noreferrer');
+  openInAppBrowser(longmanUrl);
   showToast(t('lookup.openLongman'));
 }
 
 function openPlayPhrase() {
   if (!result.value) return;
   const query = encodeURIComponent(result.value.word.trim().toLowerCase()).replace(/%20/g, '+');
-  window.open(`https://www.playphrase.me/#/search?q=${query}&pos=1&language=en`, '_blank', 'noopener,noreferrer');
+  // In the Android app this opens as an in-app browser sheet; closing it returns to this word.
+  openInAppBrowser(`https://www.playphrase.me/#/search?q=${query}&pos=1&language=en`);
 }
 
 function playWord() {
@@ -347,10 +429,58 @@ watch(
   () => route.query.word,
   async () => {
     syncKeywordFromRoute();
-    if (keyword.value.trim()) {
+    if (!keyword.value.trim()) {
+      resetLookupResult();
+    } else if (keyword.value !== result.value?.word) {
       await loadWord(false);
     }
   }
+);
+
+// ---- example sentences recorded by real speakers (from an imported dictionary's .mdd)
+const recordedExamples = ref<RecordedExample[]>([]);
+const recordedSource = ref('');
+let recordedBase = '';
+let recordedRequest = 0;
+let examplePlayer: HTMLAudioElement | null = null;
+
+watch(
+  () => result.value?.word,
+  async (word) => {
+    const current = ++recordedRequest;
+    recordedExamples.value = [];
+    if (!word) return;
+    try {
+      const data = await getRecordedExamplesApi(word);
+      if (current !== recordedRequest) return;
+      recordedExamples.value = data.examples;
+      recordedSource.value = data.dictionary || 'Longman';
+      recordedBase = data.resource_base || '';
+    } catch {
+      // No imported dictionary with recordings: the text-only examples stay.
+    }
+  },
+  { immediate: true }
+);
+
+function playRecordedExample(item: RecordedExample) {
+  examplePlayer?.pause();
+  examplePlayer = new Audio(`${API_BASE_URL}${recordedBase}${encodeURIComponent(item.audio)}`);
+  examplePlayer.play().catch(() => speakWord(item.text));
+}
+
+// entry:// links inside a dictionary entry open that word on this page.
+function openDictionaryWord(word: string) {
+  if (word) router.push({ path: '/lookup', query: { word } });
+}
+
+// Fetch the Longman pronunciation as soon as a word is shown, so the speaker button plays instantly.
+watch(
+  () => result.value?.word,
+  (word) => {
+    if (word) preloadLongmanAudio(word);
+  },
+  { immediate: true }
 );
 
 onMounted(async () => {
@@ -360,3 +490,17 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style scoped>
+.lookup-clear-button {
+  display: inline-grid;
+  inline-size: 32px;
+  block-size: 32px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--van-text-color-2);
+  cursor: pointer;
+}
+</style>

@@ -9,6 +9,21 @@
     </section>
 
     <section class="vision-upload-card">
+      <van-button
+        v-if="canUseNativeCamera"
+        block
+        round
+        type="primary"
+        icon="photograph"
+        class="vision-camera-button"
+        :loading="loading && fileSource === 'camera'"
+        :loading-text="t('vision.recognising')"
+        :disabled="loading"
+        @click="captureWithCamera"
+      >
+        {{ t('vision.takePhoto') }}
+      </van-button>
+
       <van-uploader :after-read="handleAfterRead" :before-read="beforeRead" :max-count="1" accept="image/*">
         <div class="vision-upload-box">
           <van-icon name="photograph" />
@@ -18,12 +33,13 @@
       </van-uploader>
 
       <van-button
-        v-if="selectedFile"
+        v-if="selectedFile && fileSource === 'upload'"
         block
         round
         type="primary"
         icon="scan"
         :loading="loading"
+        :loading-text="t('vision.recognising')"
         class="vision-action"
         @click="extractWords"
       >
@@ -67,6 +83,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { showFailToast, showSuccessToast } from 'vant';
 import { extractWordsFromImageApi, type VisionExtractionResult } from '@/features/vision/api/visionApi';
+import { CameraCancelledError, canUseNativeCamera, shrinkImageForOcr, takePhotoForOcr } from '@/features/vision/model/cameraCapture';
 import { useSettingsStore } from '@/shared/model/settingsStore';
 
 type UploaderFile = {
@@ -79,6 +96,7 @@ const router = useRouter();
 const { t } = useSettingsStore();
 const selectedFile = ref<File | null>(null);
 const loading = ref(false);
+const fileSource = ref<'camera' | 'upload'>('upload');
 const result = ref<VisionExtractionResult | null>(loadSavedResult());
 
 // Keep the last OCR result for this tab, so returning from the lookup page
@@ -124,6 +142,7 @@ function handleAfterRead(item: UploaderFile | UploaderFile[]) {
   const uploadItem = Array.isArray(item) ? item[0] : item;
   if (!uploadItem.file) return;
 
+  fileSource.value = 'upload';
   selectedFile.value = uploadItem.file;
   result.value = null;
   saveResult(null);
@@ -137,7 +156,8 @@ async function extractWords() {
 
   loading.value = true;
   try {
-    result.value = await extractWordsFromImageApi(selectedFile.value);
+    const upload = await shrinkImageForOcr(selectedFile.value);
+    result.value = await extractWordsFromImageApi(upload);
     saveResult(result.value);
     if (result.value.words.length > 0) {
       showSuccessToast(t('vision.done'));
@@ -151,12 +171,36 @@ async function extractWords() {
   }
 }
 
+// Android app: open the rear camera directly, then run the same OCR flow as an uploaded image.
+async function captureWithCamera() {
+  try {
+    const file = await takePhotoForOcr();
+    fileSource.value = 'camera';
+    if (file.size > 8 * 1024 * 1024) {
+      showFailToast(t('vision.tooLarge'));
+      return;
+    }
+    selectedFile.value = file;
+    result.value = null;
+    saveResult(null);
+    await extractWords();
+  } catch (error) {
+    if (!(error instanceof CameraCancelledError)) {
+      showFailToast(t('vision.cameraFailed'));
+    }
+  }
+}
+
 function openLookup(word: string) {
   router.push({ path: '/lookup', query: { word } });
 }
 </script>
 
 <style scoped>
+.vision-camera-button {
+  margin-bottom: 12px;
+}
+
 .vision-page {
   display: grid;
   align-content: start;

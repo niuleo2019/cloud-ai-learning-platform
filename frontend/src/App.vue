@@ -11,6 +11,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { Capacitor } from '@capacitor/core';
 import DeviceFrame from '@/shared/ui/DeviceFrame.vue';
 import { useSettingsStore } from '@/shared/model/settingsStore';
 
@@ -29,6 +30,12 @@ function normaliseMode(mode: unknown): DisplayMode | null {
 }
 
 function syncDisplayMode() {
+  // Inside the Android app the real phone screen is used, so never draw the demo phone frame.
+  if (Capacitor.isNativePlatform()) {
+    displayMode.value = 'h5';
+    return;
+  }
+
   const modeFromQuery = normaliseMode(route.query.mode);
 
   if (modeFromQuery) {

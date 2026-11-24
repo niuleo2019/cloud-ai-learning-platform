@@ -1,0 +1,741 @@
+/*
+ * Apple-style theme layer (iOS Human Interface look).
+ * Loaded after global.css and after Vant, so it only re-skins: flat grouped backgrounds,
+ * plain cards without shadows or gradients, one accent colour, system font, frosted bars.
+ * Page components load their scoped CSS later than this file, so the few visual properties
+ * that must win (background, border, shadow, colour) use !important.
+ */
+
+/* ---------- Tokens ---------- */
+:root {
+  --ios-bg: #f2f2f7;
+  --ios-card: #ffffff;
+  --ios-fill: #f2f2f7;
+  --ios-fill-strong: rgba(118, 118, 128, 0.12);
+  --ios-label: #000000;
+  --ios-secondary: rgba(60, 60, 67, 0.6);
+  --ios-tertiary: rgba(60, 60, 67, 0.3);
+  --ios-separator: rgba(60, 60, 67, 0.18);
+  --ios-blue: #007aff;
+  --ios-blue-tint: rgba(0, 122, 255, 0.1);
+  --ios-red: #ff3b30;
+  --ios-red-tint: rgba(255, 59, 48, 0.1);
+  --ios-green: #34c759;
+  --ios-orange: #ff9500;
+  --ios-bar: rgba(249, 249, 249, 0.86);
+  --ios-radius: 14px;
+  --ios-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --ios-segment-thumb: #ffffff;
+  --ios-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Helvetica Neue",
+    "Hiragino Sans GB", "Microsoft YaHei", Roboto, sans-serif;
+
+  --van-primary-color: var(--ios-blue);
+  --van-success-color: var(--ios-green);
+  --van-warning-color: var(--ios-orange);
+  --van-danger-color: var(--ios-red);
+  --van-text-color: var(--ios-label);
+  --van-text-color-2: var(--ios-secondary);
+  --van-text-color-3: var(--ios-tertiary);
+  --van-border-color: var(--ios-separator);
+  --van-background: var(--ios-bg);
+  --van-background-2: var(--ios-card);
+  --van-base-font: var(--ios-font);
+  --van-cell-text-color: var(--ios-label);
+  --van-cell-label-color: var(--ios-secondary);
+  --van-cell-group-inset-radius: var(--ios-radius);
+  --van-nav-bar-title-text-color: var(--ios-label);
+  --van-nav-bar-title-font-size: 17px;
+  --van-nav-bar-icon-color: var(--ios-blue);
+  --van-nav-bar-text-color: var(--ios-blue);
+  --van-tabbar-item-active-color: var(--ios-blue);
+  --van-tabbar-item-text-color: #8e8e93;
+  --van-switch-on-background: var(--ios-green);
+  --van-button-default-border-color: transparent;
+  /* one motion curve everywhere: 0.3 s with the iOS spring-like ease */
+  --van-duration-base: 0.3s;
+  --van-duration-fast: 0.2s;
+  --van-ease-out: var(--ios-ease);
+  --van-ease-in: var(--ios-ease);
+}
+
+:root.theme-dark {
+  --ios-bg: #000000;
+  --ios-card: #1c1c1e;
+  --ios-fill: #2c2c2e;
+  --ios-fill-strong: rgba(118, 118, 128, 0.24);
+  --ios-label: #ffffff;
+  --ios-secondary: rgba(235, 235, 245, 0.6);
+  --ios-tertiary: rgba(235, 235, 245, 0.3);
+  --ios-separator: rgba(84, 84, 88, 0.55);
+  --ios-blue: #0a84ff;
+  --ios-blue-tint: rgba(10, 132, 255, 0.18);
+  --ios-red: #ff453a;
+  --ios-red-tint: rgba(255, 69, 58, 0.18);
+  --ios-green: #30d158;
+  --ios-orange: #ff9f0a;
+  --ios-bar: rgba(22, 22, 23, 0.82);
+  --ios-segment-thumb: #636366;
+}
+
+/* ---------- Base ---------- */
+html,
+body {
+  font-family: var(--ios-font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html body,
+html.theme-dark body,
+html .h5-app,
+html.theme-dark .h5-app {
+  background: var(--ios-bg);
+  color: var(--ios-label);
+}
+
+html .page:not(.home-search-page),
+html .auth-page,
+html .settings-page:not(.home-search-page),
+html.theme-dark .page:not(.home-search-page),
+html.theme-dark .auth-page,
+html.theme-dark .settings-page:not(.home-search-page) {
+  background: var(--ios-bg);
+}
+
+h1,
+h2,
+h3,
+strong {
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Cards: flat, no shadow, no border, no gradient ---------- */
+.home-hero,
+.review-summary,
+.library-summary,
+.auth-brand,
+.page-intro,
+.profile-card,
+.form-panel,
+.daily-sentence-card,
+.lookup-search-card,
+.lookup-word-card,
+.longman-panel,
+.playphrase-card,
+.metric-panel,
+.quick-actions,
+.learning-card,
+.settings-hero,
+.theme-preview-card,
+.language-switch-card,
+.review-card,
+.lookup-panel,
+.word-card,
+.dictionary-card,
+.explain-card,
+.agent-welcome,
+.listening-hero,
+.listening-upload,
+.listening-list,
+.practice-progress,
+.practice-player,
+.practice-card,
+.plan-card,
+.plan-entry,
+.flip-card-front,
+.flip-card-back,
+.dict-card,
+.vision-hero-card,
+.vision-upload-card,
+.vision-result-card,
+.vision-text-card,
+.page .van-cell-group--inset {
+  border: 0 !important;
+  border-radius: var(--ios-radius) !important;
+  background: var(--ios-card) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Review page: global.css pins these with !important at higher specificity, so match it. */
+html .mobile-page .review-summary,
+html .mobile-page .flip-card-face,
+html .mobile-page .flip-card-front,
+html .mobile-page .flip-card-back,
+html.theme-dark .mobile-page .review-summary,
+html.theme-dark .mobile-page .flip-card-face,
+html.theme-dark .mobile-page .flip-card-front,
+html.theme-dark .mobile-page .flip-card-back {
+  border: 0 !important;
+  background: var(--ios-card) !important;
+  box-shadow: none !important;
+}
+
+/* The home page keeps its photo; its sentence card becomes a frosted sheet over it. */
+.home-search-page .daily-sentence-card {
+  background: var(--ios-bar) !important;
+  backdrop-filter: saturate(180%) blur(20px) !important;
+}
+
+/* Inner panels inside a card: the grouped "fill" grey instead of tinted boxes. */
+.example-box,
+.definition-item,
+.memory-item,
+.scene-item,
+.word-example,
+.longman-example,
+.longman-definition,
+.metric-panel .metric-panel,
+.rule-item {
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: var(--ios-fill) !important;
+  box-shadow: none !important;
+}
+
+/* Fields sit on the card colour; separators are hairlines. */
+.page .van-cell:not(.van-field),
+.page .van-cell-group,
+.theme-dark .page .van-field:not(.home-search-field),
+.theme-dark .page .van-cell,
+.theme-dark .page .van-cell-group {
+  background: transparent;
+  color: var(--ios-label);
+}
+
+.van-cell::after,
+.van-hairline--top-bottom::after,
+.van-hairline--bottom::after {
+  border-color: var(--ios-separator) !important;
+}
+
+/* ---------- Text colours ---------- */
+.title,
+.home-title,
+.review-summary h1,
+.library-summary h1,
+.auth-brand h1,
+.page-intro h1,
+.profile-card h1,
+.settings-hero h1,
+.lookup-title-row h1,
+.section-heading h2,
+.sentence-header h2,
+.word-card h2,
+.lookup-result h2,
+.plan-hero h1,
+.plan-task-main strong,
+.plan-summary-head,
+.plan-form strong,
+.van-cell__title {
+  color: var(--ios-label) !important;
+}
+
+.muted,
+.subtitle,
+.home-copy,
+.phonetic,
+.favorite-hint,
+.section-heading span,
+.word-card-main p,
+.word-meta,
+.auth-brand p,
+.page-intro p,
+.profile-card p,
+.settings-hero p,
+.theme-preview-card p,
+.plan-hero p,
+.plan-task-main p,
+.plan-task-head,
+.plan-summary-head span,
+.van-cell__label {
+  color: var(--ios-secondary) !important;
+}
+
+/* Section labels: small grey caps like a grouped table header, not bold blue. */
+.eyebrow {
+  color: var(--ios-secondary) !important;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Buttons, tags, controls ---------- */
+.van-button {
+  font-weight: 600;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.van-button:active,
+.plan-entry:active,
+.word-card:active,
+.review-card:active {
+  transform: scale(0.97);
+}
+
+.van-button::before {
+  display: none; /* Vant's dark press overlay; iOS shrinks instead */
+}
+
+.van-button--primary:not(.van-button--plain) {
+  border-color: var(--ios-blue) !important;
+  background: var(--ios-blue) !important;
+  box-shadow: none !important;
+}
+
+/* iOS "tinted" buttons instead of outlined ones */
+.van-button--plain {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.van-button--plain.van-button--primary,
+.van-button--plain.van-button--default {
+  background: var(--ios-blue-tint) !important;
+  color: var(--ios-blue) !important;
+}
+
+.van-button--plain.van-button--danger {
+  background: var(--ios-red-tint) !important;
+  color: var(--ios-red) !important;
+}
+
+.van-tag--plain {
+  border: 0;
+  background: color-mix(in srgb, currentColor 13%, transparent) !important;
+}
+
+.van-tag--plain::before {
+  display: none;
+}
+
+.van-tag {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* ---------- Navigation bar: frosted, hairline, 17pt semibold ---------- */
+.van-nav-bar {
+  background: var(--ios-bar) !important;
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+.page > .van-nav-bar {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+}
+
+.h5-app .page > .van-nav-bar:first-child {
+  margin: -16px -16px 4px;
+}
+
+.van-nav-bar__title {
+  font-weight: 600;
+}
+
+.van-nav-bar__text,
+.van-nav-bar .van-icon {
+  color: var(--ios-blue) !important;
+}
+
+/* Tab root pages (no back arrow): iOS large title, left aligned, on the page background. */
+.van-nav-bar:not(:has(.van-nav-bar__arrow)) {
+  background: var(--ios-bg) !important;
+  backdrop-filter: none;
+}
+
+.van-nav-bar:not(:has(.van-nav-bar__arrow))::after {
+  display: none;
+}
+
+.van-nav-bar:not(:has(.van-nav-bar__arrow)) .van-nav-bar__content {
+  height: 56px;
+  padding: 0 16px;
+}
+
+.van-nav-bar:not(:has(.van-nav-bar__arrow)) .van-nav-bar__title {
+  max-width: none;
+  margin: 0;
+  overflow: visible;
+  line-height: 1.25;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- Tab bar: floating Liquid Glass capsule with a sliding glass pill ---------- */
+:root {
+  --glass-bar: rgba(255, 255, 255, 0.58);
+  --glass-edge: rgba(255, 255, 255, 0.75);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --glass-pill: rgba(120, 120, 128, 0.14);
+  --glass-pill-edge: rgba(255, 255, 255, 0.9);
+}
+
+:root.theme-dark {
+  --glass-bar: rgba(40, 40, 44, 0.55);
+  --glass-edge: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --glass-pill: rgba(255, 255, 255, 0.12);
+  --glass-pill-edge: rgba(255, 255, 255, 0.18);
+}
+
+/* Content scrolls behind the floating bar, so leave room for the last row. */
+.page {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+}
+
+.app-tabbar.van-tabbar,
+.theme-dark .app-tabbar.van-tabbar,
+.app-device-screen .app-tabbar.van-tabbar,
+.h5-app .app-tabbar.van-tabbar {
+  position: fixed;
+  z-index: 30;
+  right: 16px;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  left: 16px;
+  width: auto;
+  max-width: 488px;
+  height: 62px;
+  margin: 0 auto;
+  padding: 4px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: var(--glass-bar);
+  box-shadow: inset 0 0 0 0.5px var(--glass-edge), inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
+  transform: none;
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+}
+
+/* The sliding glass pill behind the selected tab */
+.app-tabbar .tabbar-slider {
+  display: block;
+  position: absolute;
+  z-index: 0;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / var(--tab-count));
+  border-radius: 999px;
+  background: var(--glass-pill);
+  box-shadow: inset 0 0 0 0.5px var(--glass-pill-edge), inset 0 1px 1px var(--glass-pill-edge);
+  transform: translateX(calc(var(--tab-index) * 100%));
+  transition: transform 0.45s cubic-bezier(0.34, 1.36, 0.5, 1);
+  pointer-events: none;
+}
+
+.app-tabbar .tabbar-slider::before {
+  display: none;
+}
+
+.app-tabbar .van-tabbar-item,
+.theme-dark .app-tabbar .van-tabbar-item {
+  position: relative;
+  z-index: 1;
+  height: 54px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ios-label);
+  transition: color 0.2s var(--ios-ease);
+}
+
+.app-tabbar .van-tabbar-item--active,
+.theme-dark .app-tabbar .van-tabbar-item--active {
+  background: transparent;
+  color: var(--ios-blue);
+}
+
+.app-tabbar .van-tabbar-item__icon {
+  margin-bottom: 3px;
+  font-size: 23px;
+  transition: transform 0.3s var(--ios-ease);
+}
+
+.app-tabbar .van-tabbar-item:active .van-tabbar-item__icon {
+  transform: scale(0.88);
+}
+
+.app-tabbar .van-tabbar-item--active .van-tabbar-item__icon {
+  transform: none;
+}
+
+.app-tabbar .van-tabbar-item__text {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Inside the desktop phone frame: float inside the screen and let pages run under the bar */
+@media (min-width: 768px) {
+  .app-device-screen .app-tabbar.van-tabbar {
+    position: absolute;
+    bottom: 14px;
+  }
+
+  .app-device-screen .page,
+  .app-device-screen .auth-page {
+    height: 100%;
+  }
+
+  /* Make the phone screen the containing block for position: fixed, so bottom sheets,
+     dialogs, overlays and the side drawer open inside the phone instead of the browser window. */
+  .app-device-screen {
+    transform: translateZ(0);
+  }
+}
+
+/* iOS switches are green when on. Vant declares this variable on the component itself. */
+.van-switch {
+  --van-switch-on-background: var(--ios-green);
+}
+
+
+/* ======================= Step 3: less is more ======================= */
+
+/* Small caps labels above titles and repeated explanations are gone; the large title says it. */
+.eyebrow,
+.listening-hero,
+.favorite-hint,
+.library-summary .van-button,
+.word-meta span:last-child,
+.plan-entry small {
+  display: none !important;
+}
+
+/* One accent: every outlined tag becomes a blue tint (errors stay red). */
+.van-tag--plain:not(.van-tag--danger),
+html .mobile-page .stage-tag,
+html.theme-dark .mobile-page .stage-tag {
+  border: 0 !important;
+  background: var(--ios-blue-tint) !important;
+  color: var(--ios-blue) !important;
+}
+
+/* Review answers: tinted, not three loud filled colours. */
+.review-actions .van-button {
+  border-color: transparent !important;
+}
+
+.review-actions .van-button--success {
+  background: color-mix(in srgb, var(--ios-green) 16%, transparent) !important;
+  color: var(--ios-green) !important;
+}
+
+.review-actions .van-button--warning {
+  background: color-mix(in srgb, var(--ios-orange) 16%, transparent) !important;
+  color: var(--ios-orange) !important;
+}
+
+.review-actions .van-button--danger {
+  background: var(--ios-red-tint) !important;
+  color: var(--ios-red) !important;
+}
+
+/* Listening upload: a plain grey well instead of a dashed box. */
+.listening-upload-box {
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: var(--ios-fill) !important;
+  color: var(--ios-blue) !important;
+}
+
+.listening-upload-box span {
+  color: var(--ios-secondary) !important;
+}
+
+/* Chips (loop, plan words) as grey / blue-tinted capsules */
+.practice-chip,
+.plan-words button {
+  border: 0 !important;
+  background: var(--ios-fill-strong) !important;
+  color: var(--ios-label) !important;
+}
+
+.practice-chip.on,
+.plan-words button {
+  background: var(--ios-blue-tint) !important;
+  color: var(--ios-blue) !important;
+}
+
+.practice-options {
+  align-items: center;
+}
+
+.practice-rate {
+  flex: 1;
+}
+
+/* Dictation / retell tabs as an iOS segmented control */
+.practice-tabs .van-tabs__wrap {
+  height: 36px !important;
+  overflow: visible !important;
+}
+
+.practice-tabs .van-tabs__nav {
+  padding: 2px !important;
+  border-radius: 9px;
+  background: var(--ios-fill-strong) !important;
+}
+
+.practice-tabs .van-tab {
+  flex: 1 !important;
+  border-radius: 7px;
+  color: var(--ios-label) !important;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.3s var(--ios-ease);
+}
+
+.practice-tabs .van-tab--active {
+  background: var(--ios-segment-thumb);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+}
+
+.practice-tabs .van-tabs__line {
+  display: none !important;
+}
+
+.practice-tabs .van-tabs__content {
+  margin-top: 12px;
+}
+
+/* Inputs inside cards: grey well, no outline */
+.practice-input,
+.plan-focus {
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: var(--ios-fill) !important;
+}
+
+/* ======================= Interaction ======================= */
+
+/* Dialogs rise from the bottom like an iOS sheet instead of popping in the middle. */
+.van-dialog {
+  top: auto !important;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  width: calc(100% - 20px) !important;
+  max-width: 500px;
+  border-radius: 14px !important;
+  background: var(--ios-card) !important;
+  transform: translate3d(0, 0, 0) !important;
+}
+
+.van-dialog-bounce-enter-active,
+.van-dialog-bounce-leave-active {
+  transition: transform 0.3s var(--ios-ease), opacity 0.3s var(--ios-ease) !important;
+}
+
+.van-dialog-bounce-enter-from,
+.van-dialog-bounce-leave-to,
+.van-dialog-bounce-leave-active:not(.van-dialog-bounce-leave-from) {
+  opacity: 1 !important;
+  transform: translate3d(0, 110%, 0) !important;
+}
+
+.van-dialog__header {
+  color: var(--ios-label);
+  font-weight: 600;
+}
+
+.van-dialog__message {
+  color: var(--ios-secondary);
+}
+
+.van-dialog__confirm,
+.van-dialog__confirm:active {
+  color: var(--ios-blue) !important;
+  font-weight: 600;
+}
+
+.van-dialog__cancel {
+  color: var(--ios-blue) !important;
+}
+
+.van-dialog .van-button,
+.van-action-sheet__item,
+.van-action-sheet__cancel,
+.van-action-sheet__header {
+  background: var(--ios-card) !important;
+  color: var(--ios-label);
+}
+
+.van-action-sheet__item {
+  color: var(--ios-blue);
+  font-size: 17px;
+}
+
+.van-popup {
+  background: var(--ios-card);
+}
+
+.van-popup--bottom.van-popup--round {
+  border-radius: 14px 14px 0 0;
+}
+
+.van-action-sheet__gap {
+  background: var(--ios-bg) !important;
+}
+
+/* Everything that moves uses the same curve */
+.van-button,
+.plan-entry,
+.word-card,
+.review-card,
+.flip-card,
+.home-row,
+.van-cell {
+  transition-timing-function: var(--ios-ease) !important;
+}
+
+/* Large title collapses into a 17pt frosted bar after scrolling */
+.page > .van-nav-bar:not(:has(.van-nav-bar__arrow)) {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  transition: background 0.3s var(--ios-ease);
+}
+
+.van-nav-bar:not(:has(.van-nav-bar__arrow)) .van-nav-bar__content,
+.van-nav-bar:not(:has(.van-nav-bar__arrow)) .van-nav-bar__title {
+  transition: height 0.3s var(--ios-ease), font-size 0.3s var(--ios-ease), margin 0.3s var(--ios-ease);
+}
+
+.ios-scrolled .page > .van-nav-bar:not(:has(.van-nav-bar__arrow)) {
+  background: var(--ios-bar) !important;
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: 0 0.5px 0 var(--ios-separator);
+}
+
+.ios-scrolled .van-nav-bar:not(:has(.van-nav-bar__arrow)) .van-nav-bar__content {
+  height: 44px;
+}
+
+.ios-scrolled .van-nav-bar:not(:has(.van-nav-bar__arrow)) .van-nav-bar__title {
+  margin: 0 auto;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+/* Icons: one size and weight in lists and buttons */
+.van-cell__left-icon {
+  margin-right: 10px;
+  color: var(--ios-blue);
+  font-size: 20px;
+}
+
+/* Dark-mode leftovers from the old theme */
+html .mobile-page .card-word {
+  text-shadow: none !important;
+}
+
+html .home-page .home-daily p {
+  color: var(--ios-secondary) !important;
+  font-weight: 400 !important;
+}

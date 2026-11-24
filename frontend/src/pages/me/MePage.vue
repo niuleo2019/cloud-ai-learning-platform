@@ -1,6 +1,7 @@
 <template>
   <main class="page mobile-page">
-    <van-nav-bar :title="t('me.title')" />
+    <!-- Opened from the home menu now, so it needs a way back -->
+    <van-nav-bar :title="t('me.title')" :left-text="t('common.back')" left-arrow @click-left="goBack" />
 
     <section class="profile-card account-card">
       <div class="avatar">{{ userInitial }}</div>
@@ -21,6 +22,7 @@
     </section>
 
     <section class="quick-actions">
+      <van-cell :title="t('plan.entry')" :label="t('plan.entryHint')" icon="guide-o" is-link to="/plan" />
       <van-cell :title="t('me.overview')" :label="t('me.overviewLabel')" icon="chart-trending-o" is-link to="/overview" />
       <van-cell :title="t('me.project')" :label="t('me.projectLabel')" icon="records-o" />
       <van-cell :title="t('me.method')" :label="t('me.methodLabel')" icon="clock-o" />
@@ -42,6 +44,11 @@ import { useSettingsStore } from '@/shared/model/settingsStore';
 import type { User } from '@/shared/types';
 
 const router = useRouter();
+
+function goBack() {
+  if (router.options.history.state.back) router.back();
+  else router.replace('/home');
+}
 const { language, t } = useSettingsStore();
 const user = ref<User | null>(getUser());
 

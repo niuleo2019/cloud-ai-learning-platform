@@ -1,6 +1,8 @@
 import { lookupOfflineDictionaryApi } from '@/features/words/api/dictionaryApi';
 import type { AppLanguage } from '@/shared/model/settingsStore';
 import type { MediaScene, RootMemory } from '@/shared/types';
+import { isSingleHeadword, playLongmanAudio } from '@/features/words/model/pronunciation';
+import { API_BASE_URL } from '@/shared/api/config';
 
 interface DictionaryMeaning {
   partOfSpeech: string;
@@ -336,52 +338,113 @@ export async function lookupDictionary(word: string): Promise<DictionaryLookupRe
   return lookupOnlineDictionary(cleanWord);
 }
 
-function getEnglishVoice() {
-  const voices = window.speechSynthesis.getVoices();
-  return (
-    voices.find((voice) => voice.lang === 'en-AU') ||
-    voices.find((voice) => voice.lang === 'en-US') ||
-    voices.find((voice) => voice.lang.startsWith('en')) ||
-    null
-  );
+// ---------------------------------------------------------------- speaking words and sentences
+// Order: real Longman recording (words) -> server neural voice (Piper, sentences) -> browser voice.
+
+const NATURAL_VOICE = /natural|neural|online|google|enhanced|premium|siri/i;
+const ACCENT_ORDER = ['en-GB', 'en-AU', 'en-US'];
+
+function englishVoices() {
+  return window.speechSynthesis.getVoices().filter((voice) => voice.lang.replace('_', '-').startsWith('en'));
 }
 
-function speakWithBrowserVoice(text: string) {
+function rankVoice(voice: SpeechSynthesisVoice, preferNatural: boolean) {
+  const accent = ACCENT_ORDER.indexOf(voice.lang.replace('_', '-'));
+  const natural = NATURAL_VOICE.test(voice.name);
+  return (preferNatural === natural ? 0 : 10) + (accent === -1 ? 3 : accent);
+}
+
+function pickVoice(preferNatural: boolean) {
+  return [...englishVoices()].sort((a, b) => rankVoice(a, preferNatural) - rankVoice(b, preferNatural))[0] || null;
+}
+
+// Voices load asynchronously in Chrome: warm the list so the first tap already has them.
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.addEventListener?.('voiceschanged', () => window.speechSynthesis.getVoices());
+}
+
+// Keep a reference: Chrome can garbage-collect an utterance before it plays (no sound, no error).
+let currentUtterance: SpeechSynthesisUtterance | null = null;
+
+function speakWithBrowserVoice(text: string, preferNatural = true): boolean {
   if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
     return false;
   }
-
+  const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(text);
-  const voice = getEnglishVoice();
+  const voice = pickVoice(preferNatural);
   if (voice) {
     utterance.voice = voice;
     utterance.lang = voice.lang;
   } else {
-    utterance.lang = 'en-AU';
+    utterance.lang = 'en-GB';
   }
-  utterance.rate = text.trim().split(/\s+/).length > 2 ? 0.82 : 0.86;
-  utterance.pitch = 1;
-  utterance.volume = 1;
+  utterance.rate = 0.95;
+  currentUtterance = utterance;
 
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.resume();
-  window.speechSynthesis.speak(utterance);
+  // Online voices sometimes never start (offline, blocked, or a browser bug): retry with a local voice.
+  let started = false;
+  utterance.onstart = () => {
+    started = true;
+  };
+  const retryLocal = () => {
+    if (started || currentUtterance !== utterance) return;
+    synth.cancel();
+    if (preferNatural) speakWithBrowserVoice(text, false);
+  };
+  utterance.onerror = (event) => {
+    if (event.error !== 'interrupted' && event.error !== 'canceled') retryLocal();
+  };
+  if (voice && !voice.localService) window.setTimeout(retryLocal, 1500);
+
+  const speakNow = () => {
+    synth.resume();
+    synth.speak(utterance);
+  };
+  if (synth.speaking || synth.pending) {
+    // speak() straight after cancel() is dropped by Chrome; give the engine a moment.
+    synth.cancel();
+    window.setTimeout(speakNow, 80);
+  } else {
+    speakNow();
+  }
   return true;
+}
+
+let sentencePlayer: HTMLAudioElement | null = null;
+
+/** A sentence read by the server's neural voice (Piper). Falls back to the browser voice. */
+function speakSentence(text: string) {
+  sentencePlayer?.pause();
+  window.speechSynthesis?.cancel();
+  const params = new URLSearchParams({ text });
+  sentencePlayer = new Audio(`${API_BASE_URL}/dictionary/speak?${params.toString()}`);
+  sentencePlayer.play().catch(() => speakWithBrowserVoice(text));
 }
 
 export function speakWord(text: string, audioUrl?: string) {
   const cleanText = text.trim();
   if (!cleanText) return;
 
-  if (audioUrl) {
-    const audio = new Audio(audioUrl);
-    audio.play().catch(() => {
-      speakWithBrowserVoice(cleanText);
+  const playFallback = () => {
+    if (audioUrl) {
+      const audio = new Audio(audioUrl);
+      audio.play().catch(() => speakSentence(cleanText));
+      return;
+    }
+    speakSentence(cleanText);
+  };
+
+  // Real Longman recordings first (single words); sentences and missing words use the neural voice.
+  if (isSingleHeadword(cleanText)) {
+    playLongmanAudio(cleanText).then((played) => {
+      if (!played) playFallback();
     });
     return;
   }
 
-  speakWithBrowserVoice(cleanText);
+  playFallback();
 }
 
 export function buildRootMemory(word: string, language: AppLanguage = 'en'): RootMemory[] {

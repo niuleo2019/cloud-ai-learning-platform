@@ -1215,6 +1215,10 @@ body {
   font-size: 14px;
 }
 
+.theme-dark .scene-title-row strong {
+  color: #f8fafc;
+}
+
 .scene-item blockquote {
   margin: 10px 0 0;
   padding-left: 10px;

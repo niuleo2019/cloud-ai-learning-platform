@@ -2,19 +2,11 @@
   <main class="page mobile-page">
     <van-nav-bar :title="t('words.title')" :right-text="t('words.add')" @click-right="router.push('/add-word')" />
 
-    <section class="library-summary">
-      <div>
-        <p class="eyebrow">{{ language === 'zh' ? '词库总览' : t('words.library') }}</p>
-        <h1>{{ words.length }} {{ t('words.count') }}</h1>
-      </div>
-      <van-button round size="small" type="primary" icon="plus" to="/add-word">{{ t('words.add') }}</van-button>
-    </section>
-
     <van-search v-model="searchQuery" :placeholder="t('words.search')" shape="round" background="transparent" />
 
     <van-pull-refresh v-model="refreshing" @refresh="loadWords">
       <van-empty
-        v-if="filteredWords.length === 0"
+        v-if="loaded && filteredWords.length === 0"
         image="search"
         :description="searchQuery ? t('words.noMatch') : t('words.empty')"
       >
@@ -89,6 +81,8 @@ const router = useRouter();
 const { language, t } = useSettingsStore();
 const words = ref<Word[]>([]);
 const refreshing = ref(false);
+// Don't flash "No words yet" while the list is still loading.
+const loaded = ref(false);
 const searchQuery = ref('');
 
 const filteredWords = computed(() => {
@@ -122,8 +116,12 @@ const editForm = reactive({
 });
 
 async function loadWords() {
-  words.value = await getWordsApi();
-  refreshing.value = false;
+  try {
+    words.value = await getWordsApi();
+  } finally {
+    loaded.value = true;
+    refreshing.value = false;
+  }
 }
 
 function handlePointerDown(event: PointerEvent) {

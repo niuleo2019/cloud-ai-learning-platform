@@ -7,7 +7,6 @@
         <p class="eyebrow">{{ language === 'zh' ? '复习队列' : 'Review Queue' }}</p>
         <h1>{{ totalCount }} {{ t('reviews.due') }}</h1>
       </div>
-      <van-tag round type="primary">{{ t('reviews.ruleTag') }}</van-tag>
     </section>
 
     <div v-if="totalCount > 0" class="review-progress">
@@ -21,15 +20,16 @@
       <span class="review-progress-label">{{ doneCount }} / {{ totalCount }}</span>
     </div>
 
-    <van-empty v-if="reviews.length === 0 && totalCount === 0" image="search" :description="t('reviews.empty')">
+    <van-empty v-if="loaded && reviews.length === 0 && totalCount === 0" image="search" :description="t('reviews.empty')">
       <van-button round type="primary" to="/add-word">{{ t('reviews.addWord') }}</van-button>
     </van-empty>
 
-    <van-empty v-else-if="reviews.length === 0 && totalCount > 0" image="success" :description="t('reviews.done')">
+    <van-empty v-else-if="loaded && reviews.length === 0 && totalCount > 0" image="success" :description="t('reviews.done')">
       <van-button round type="primary" to="/words">{{ t('reviews.viewLibrary') }}</van-button>
     </van-empty>
 
-    <section v-else class="flip-card-wrapper" @click="flip">
+    <!-- Only when there is a card to show (nothing renders while today's reviews are still loading) -->
+    <section v-else-if="current" class="flip-card-wrapper" @click="flip">
       <div class="flip-card" :class="{ flipped }">
         <div class="flip-card-face flip-card-front">
           <van-tag plain type="primary" class="stage-tag">{{ t('reviews.stage') }} {{ current.review_stage ?? 0 }}</van-tag>
@@ -69,6 +69,8 @@
 </template>
 
 <script setup lang="ts">
+import { syncReviewReminders } from '@/shared/lib/reviewReminders';
+import { hapticSuccess, hapticTap } from '@/shared/lib/haptics';
 import { computed, onMounted, ref } from 'vue';
 import { showToast } from 'vant';
 import { getTodayReviewsApi, submitReviewApi } from '@/features/reviews/api/reviewApi';
@@ -78,6 +80,8 @@ import type { RememberLevel, Word } from '@/shared/types';
 const { language, t } = useSettingsStore();
 const reviews = ref<Word[]>([]);
 const loading = ref(false);
+// Don't flash the empty-state picture before today's reviews have arrived.
+const loaded = ref(false);
 const flipped = ref(false);
 const totalCount = ref(0);
 
@@ -88,21 +92,29 @@ const progressPercent = computed(() =>
 const current = computed(() => reviews.value[0]);
 
 function flip() {
+  if (!flipped.value) hapticTap();
   if (!flipped.value) flipped.value = true;
 }
 
 async function loadReviews() {
-  reviews.value = await getTodayReviewsApi();
-  totalCount.value = reviews.value.length;
+  try {
+    reviews.value = await getTodayReviewsApi();
+    totalCount.value = reviews.value.length;
+  } finally {
+    loaded.value = true;
+  }
 }
 
 async function submit(level: RememberLevel) {
   if (!current.value) return;
+  if (level === 'known') hapticSuccess();
+  else hapticTap();
 
   loading.value = true;
   try {
     await submitReviewApi(current.value.id, level);
     reviews.value.shift();
+    syncReviewReminders(); // the next due time just moved
     flipped.value = false;
     showToast(t('reviews.saved'));
   } finally {
